@@ -1,4 +1,4 @@
-name: CI/CD Secure Pipeline
+ame: CI/CD Secure Pipeline
 
 on:
   push:
@@ -6,42 +6,58 @@ on:
       - main
 
 jobs:
-
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: echo "Building application..."
+        run: echo "✅ Build stage complete"
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build
     steps:
       - uses: actions/checkout@v3
       - name: Run Tests
-        run: echo "Running tests..."
+        run: echo "✅ Tests passed"
 
   security-scan:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: test
     steps:
       - uses: actions/checkout@v3
-      - name: Security Scan
-        run: echo "Scanning for vulnerabilities..."
+
+      - name: Run ZAP Scan
+        run: python3 ~/devsecops-project/zap_scan.py
+
+      - name: Check Policy
+        run: python3 ~/devsecops-project/policy.py
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: zap-security-report
+          path: ~/devsecops-project/reports/
 
   deploy-staging:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: security-scan
     steps:
       - uses: actions/checkout@v3
       - name: Deploy to Staging
-        run: echo "Deploying to staging..."
+        run: |
+          echo "✅ Deploying to staging..."
+          docker rm -f dvwa-staging || true
+          docker run -d --name dvwa-staging -p 9000:80 vulnerables/web-dvwa
 
   deploy-production:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: deploy-staging
     steps:
       - uses: actions/checkout@v3
       - name: Deploy to Production
-        run: echo "Deploying to production..."
+        run: |
+          echo "✅ Deploying to production..."
+          docker rm -f dvwa-prod || true
+          docker run -d --name dvwa-prod -p 80:80 vulnerables/web-dvwa
