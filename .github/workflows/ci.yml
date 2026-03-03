@@ -48,7 +48,9 @@ jobs:
       - name: Deploy to Staging
         run: |
           echo "✅ Deploying to staging..."
-          docker rm -f dvwa-staging || true
+          docker rm -f dvwa-staging 2>/dev/null || true
+          docker stop dvwa-lab 2>/dev/null || true
+          docker rm dvwa-lab 2>/dev/null || true
           docker run -d --name dvwa-staging -p 9000:80 vulnerables/web-dvwa
 
   deploy-production:
