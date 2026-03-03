@@ -33,7 +33,10 @@ jobs:
       - name: Check Policy
         run: python3 ~/devsecops-project/policy.py
 
-      - name: Upload Report
+      - name: Upload Report to MinIO
+        run: python3 ~/devsecops-project/minio_upload.py
+
+      - name: Upload Report as Artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
