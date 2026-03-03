@@ -1,4 +1,4 @@
-ame: CI/CD Secure Pipeline
+name: CI/CD Secure Pipeline
 
 on:
   push:
