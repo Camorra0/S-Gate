@@ -1,0 +1,133 @@
+import json
+import os
+import sys
+from datetime import datetime
+
+REPORTS_DIR = os.path.expanduser("~/devsecops-project/reports")
+
+def get_latest_report():
+    files = sorted([
+        f for f in os.listdir(REPORTS_DIR)
+        if f.startswith("zap_report") and f.endswith(".json")
+    ])
+    if not files:
+        print("[!] No reports found.")
+        sys.exit(1)
+    return os.path.join(REPORTS_DIR, files[-1])
+
+def parse_report(report_path):
+    with open(report_path) as f:
+        data = json.load(f)
+    findings = {"Critical": [], "High": [], "Medium": [], "Low": [], "Informational": []}
+    for site in data.get("site", []):
+        for alert in site.get("alerts", []):
+            risk = alert.get("riskdesc", "").split(" ")[0]
+            entry = {
+                "name": alert.get("name", "Unknown"),
+                "desc": alert.get("desc", "")[:200],
+                "solution": alert.get("solution", "")[:200],
+                "instances": len(alert.get("instances", []))
+            }
+            if risk in findings:
+                findings[risk].append(entry)
+    return findings
+
+def generate_html(findings, report_path):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    total = sum(len(v) for v in findings.values())
+    colors = {
+        "Critical": "#ff0000",
+        "High":     "#ff4444",
+        "Medium":   "#ff9900",
+        "Low":      "#2196F3",
+        "Informational": "#888888"
+    }
+    icons = {
+        "Critical": "🔴",
+        "High":     "🔴",
+        "Medium":   "🟡",
+        "Low":      "🟢",
+        "Informational": "ℹ️"
+    }
+    sections = ""
+    for level in ["Critical", "High", "Medium", "Low", "Informational"]:
+        items = findings[level]
+        if not items:
+            continue
+        color = colors[level]
+        icon = icons[level]
+        cards = ""
+        for item in items:
+            cards += f"""
+            <div class="card">
+                <h3>{item['name']}</h3>
+                <p><strong>Description:</strong> {item['desc']}</p>
+                <p><strong>Solution:</strong> {item['solution']}</p>
+                <p><strong>Instances found:</strong> {item['instances']}</p>
+            </div>
+            """
+        sections += f"""
+        <div class="section">
+            <h2 style="color:{color}">{icon} {level} ({len(items)})</h2>
+            {cards}
+        </div>
+        """
+    blocking = len(findings["Critical"]) + len(findings["High"])
+    if blocking > 0:
+        decision = "❌ DEPLOYMENT BLOCKED"
+        decision_color = "#ff4444"
+    else:
+        decision = "✅ DEPLOYMENT ALLOWED"
+        decision_color = "#4CAF50"
+
+    html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ZAP Security Report</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; margin: 0; padding: 20px; }}
+        .header {{ background: #16213e; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 20px; border: 1px solid #0f3460; }}
+        .header h1 {{ color: #e94560; margin: 0; }}
+        .summary {{ display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }}
+        .summary-card {{ background: #16213e; padding: 20px; border-radius: 10px; flex: 1; text-align: center; border: 1px solid #0f3460; min-width: 120px; }}
+        .summary-card h2 {{ margin: 0; font-size: 2em; }}
+        .decision {{ background: #16213e; padding: 20px; border-radius: 10px; text-align: center; font-size: 1.5em; font-weight: bold; color: {decision_color}; margin-bottom: 20px; border: 2px solid {decision_color}; }}
+        .section {{ background: #16213e; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #0f3460; }}
+        .card {{ background: #0f3460; padding: 15px; border-radius: 8px; margin-top: 10px; }}
+        .card h3 {{ margin: 0 0 10px 0; color: #e94560; }}
+        .footer {{ text-align: center; color: #888; margin-top: 20px; }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛡️ ZAP Security Scan Report</h1>
+        <p>Generated: {timestamp}</p>
+        <p>Source: {report_path}</p>
+    </div>
+    <div class="decision">{decision}</div>
+    <div class="summary">
+        <div class="summary-card"><h2 style="color:#ff0000">{len(findings['Critical'])}</h2><p>Critical</p></div>
+        <div class="summary-card"><h2 style="color:#ff4444">{len(findings['High'])}</h2><p>High</p></div>
+        <div class="summary-card"><h2 style="color:#ff9900">{len(findings['Medium'])}</h2><p>Medium</p></div>
+        <div class="summary-card"><h2 style="color:#2196F3">{len(findings['Low'])}</h2><p>Low</p></div>
+        <div class="summary-card"><h2 style="color:#888">{len(findings['Informational'])}</h2><p>Info</p></div>
+        <div class="summary-card"><h2 style="color:#4CAF50">{total}</h2><p>Total</p></div>
+    </div>
+    {sections}
+    <div class="footer"><p>Generated by DevSecOps Pipeline | OWASP ZAP {datetime.now().year}</p></div>
+</body>
+</html>
+"""
+    output_path = os.path.join(REPORTS_DIR, f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html")
+    with open(output_path, "w") as f:
+        f.write(html)
+    print(f"[+] ✅ HTML report saved: {output_path}")
+    return output_path
+
+if __name__ == "__main__":
+    report_path = get_latest_report()
+    print(f"[*] Reading: {report_path}")
+    findings = parse_report(report_path)
+    generate_html(findings, report_path)
