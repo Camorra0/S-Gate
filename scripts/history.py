@@ -3,7 +3,7 @@ import os
 import sys
 from datetime import datetime
 
-REPORTS_DIR = os.path.expanduser("~/devsecops-project/reports")
+REPORTS_DIR = "/home/server/devsecops-project/reports"
 
 def get_all_reports():
     files = sorted([
