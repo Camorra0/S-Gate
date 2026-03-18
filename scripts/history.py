@@ -106,4 +106,4 @@ def run_history():
             f.write(f"  = {v}\n")
     print(f"[*] History log saved: {log_path}")
 
-if __name__ == "__main__
+if __name__ == "__main__"
