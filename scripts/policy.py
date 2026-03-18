@@ -2,7 +2,7 @@ import json
 import sys
 import os
 
-REPORTS_DIR = os.path.expanduser("~/devsecops-project/reports")
+REPORTS_DIR = "/home/server/devsecops-project/reports"
 BLOCKING_LEVELS = ["High", "Critical"]
 
 def get_latest_report():
