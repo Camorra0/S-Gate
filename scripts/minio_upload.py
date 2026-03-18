@@ -7,8 +7,7 @@ MINIO_ENDPOINT  = "localhost:9001"
 MINIO_ACCESS    = "admin"
 MINIO_SECRET    = "password123"
 BUCKET_NAME     = "zap-reports"
-REPORTS_DIR     = os.path.expanduser("~/devsecops-project/reports")
-
+REPORTS_DIR = "/home/server/devsecops-project/reports"
 def get_latest_report():
     files = sorted([
         f for f in os.listdir(REPORTS_DIR)
