@@ -6,7 +6,8 @@ from datetime import datetime
 TARGET_URL  = "http://localhost:9000"
 ZAP_IMAGE   = "ghcr.io/zaproxy/zaproxy:stable"
 REPORTS_DIR = os.path.expanduser("~/devsecops-project/reports")
-TIMESTAMP   = datetime.now().strftime("%Y%m%d_%H%M%S")
+os.makedirs(REPORTS_DIR, exist_ok=True)
+os.system(f"chmod 777 {REPORTS_DIR}")TIMESTAMP   = datetime.now().strftime("%Y%m%d_%H%M%S")
 REPORT_FILE = f"zap_report_{TIMESTAMP}.json"
 
 def run_scan():
