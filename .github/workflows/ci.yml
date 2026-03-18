@@ -28,19 +28,19 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Run ZAP Scan
-        run: python3 ~/devsecops-project/zap_scan.py
+        run: python3 $GITHUB_WORKSPACE/scripts/zap_scan.py
 
       - name: Check Policy
-        run: python3 ~/devsecops-project/policy.py
+        run: python3 $GITHUB_WORKSPACE/scripts/policy.py
 
       - name: Generate HTML Report
-        run: python3 ~/devsecops-project/generate_report.py
+        run: python3 $GITHUB_WORKSPACE/scripts/generate_report.py
 
       - name: Upload Report to MinIO
-        run: python3 ~/devsecops-project/minio_upload.py
+        run: python3 $GITHUB_WORKSPACE/scripts/minio_upload.py
 
       - name: Compare Vulnerability History
-        run: python3 ~/devsecops-project/history.py
+        run: python3 $GITHUB_WORKSPACE/scripts/history.py
 
       - name: Upload Reports as Artifact
         uses: actions/upload-artifact@v4
