@@ -33,16 +33,21 @@ jobs:
       - name: Check Policy
         run: python3 ~/devsecops-project/policy.py
 
-      - name: Upload Report to MinIO
-        run: python3 ~/devsecops-project/minio_uploads.py
+      - name: Generate HTML Report
+        run: python3 ~/devsecops-project/generate_report.py
 
-      - name: Upload Report as Artifact
+      - name: Upload Report to MinIO
+        run: python3 ~/devsecops-project/minio_upload.py
+
+      - name: Compare Vulnerability History
+        run: python3 ~/devsecops-project/history.py
+
+      - name: Upload Reports as Artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: zap-security-report
           path: ~/devsecops-project/reports/
-
   deploy-staging:
     runs-on: self-hosted
     needs: security-scan
