@@ -36,7 +36,7 @@ jobs:
       - name: Start Ollama
         run: |
           nohup ollama serve > ~/ollama.log 2>&1 &
-          sleep 15
+          sleep 30
 
       - name: AI Analysis with Mistral
         run: python3 ${{ github.workspace }}/scripts/llm_agent.py
