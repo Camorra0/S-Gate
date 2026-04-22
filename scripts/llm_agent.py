@@ -36,6 +36,7 @@ def parse_vulnerabilities(report_path):
     return vulns
 
 def ask_mistral(vulnerabilities):
+    vulnerabilities = vulnerabilities[:5]
     vuln_text = ""
     for i, v in enumerate(vulnerabilities, 1):
         vuln_text += f"""
@@ -69,7 +70,7 @@ Be specific, practical, and clear. Format your response with clear sections for 
         "model": MODEL,
         "prompt": prompt,
         "stream": False
-    }, timeout=300)
+    }, timeout=600)
 
     if response.status_code != 200:
         print(f"[!] Ollama error: {response.status_code}")
