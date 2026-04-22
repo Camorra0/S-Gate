@@ -32,6 +32,14 @@ jobs:
 
       - name: Run ZAP Scan
         run: python3 ${{ github.workspace }}/scripts/zap_scan.py
+    
+      - name: Start Ollama
+        run: |
+          nohup ollama serve > ~/ollama.log 2>&1 &
+          sleep 15
+
+      - name: AI Analysis with Mistral
+        run: python3 ${{ github.workspace }}/scripts/llm_agent.py
 
       - name: Check Policy
         run: python3 ${{ github.workspace }}/scripts/policy.py
