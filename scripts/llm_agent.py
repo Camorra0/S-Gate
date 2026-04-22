@@ -27,41 +27,31 @@ def parse_vulnerabilities(report_path):
     for site in data.get("site", []):
         for alert in site.get("alerts", []):
             vulns.append({
-                "name":     alert.get("name", "Unknown"),
-                "risk":     alert.get("riskdesc", "Unknown"),
-                "desc":     alert.get("desc", "")[:300],
-                "solution": alert.get("solution", "")[:300],
+                "name":      alert.get("name", "Unknown"),
+                "risk":      alert.get("riskdesc", "Unknown"),
+                "desc":      alert.get("desc", "")[:150],
+                "solution":  alert.get("solution", "")[:150],
                 "instances": len(alert.get("instances", []))
             })
     return vulns
 
 def ask_mistral(vulnerabilities):
-    vulnerabilities = vulnerabilities[:5]
+    # Only analyze top 3 most important vulnerabilities
+    vulnerabilities = vulnerabilities[:3]
+
     vuln_text = ""
     for i, v in enumerate(vulnerabilities, 1):
-        vuln_text += f"""
-Vulnerability {i}:
-- Name: {v['name']}
-- Risk Level: {v['risk']}
-- Description: {v['desc']}
-- Instances Found: {v['instances']}
-- Suggested Solution: {v['solution']}
-"""
+        vuln_text += f"Vulnerability {i}: {v['name']} - Risk: {v['risk']}\n"
 
-    prompt = f"""You are a cybersecurity expert analyzing a web application security scan report.
-
-The following vulnerabilities were found by OWASP ZAP scanner:
+    prompt = f"""You are a security expert. Analyze these web vulnerabilities briefly:
 
 {vuln_text}
 
-Please provide:
-1. A simple explanation of each vulnerability in plain English
-2. The potential impact if exploited
-3. A specific step-by-step fix for each vulnerability
-4. An overall security assessment (score out of 10)
-5. Top 3 priorities to fix first
+For each vulnerability provide:
+1. What it is (1 sentence)
+2. How to fix it (1-2 sentences)
 
-Be specific, practical, and clear. Format your response with clear sections for each vulnerability."""
+Be very brief and direct."""
 
     print("[*] Sending report to Mistral for analysis...")
     print("[*] This may take 1-2 minutes...")
@@ -83,17 +73,17 @@ def save_html_report(vulnerabilities, analysis):
     file_ts   = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     vuln_summary = ""
-    for v in vulnerabilities:
+    for v in vulnerabilities[:3]:
         color = "#ff4444" if "High" in v['risk'] else "#ff9900" if "Medium" in v['risk'] else "#2196F3"
         vuln_summary += f"""
         <div class="vuln-card">
             <h3 style="color:{color}">{v['name']}</h3>
             <p><strong>Risk:</strong> {v['risk']}</p>
             <p><strong>Instances:</strong> {v['instances']}</p>
+            <p><strong>Description:</strong> {v['desc']}</p>
         </div>
         """
 
-    # Convert analysis text to HTML paragraphs
     analysis_html = ""
     for line in analysis.split("\n"):
         if line.strip():
@@ -128,7 +118,7 @@ def save_html_report(vulnerabilities, analysis):
     </div>
 
     <div class="section">
-        <h2>📋 Vulnerabilities Found ({len(vulnerabilities)} total)</h2>
+        <h2>📋 Top 3 Vulnerabilities Analyzed</h2>
         {vuln_summary}
     </div>
 
@@ -153,14 +143,14 @@ def save_html_report(vulnerabilities, analysis):
     return output_path
 
 if __name__ == "__main__":
-    report_path   = get_latest_report()
+    report_path     = get_latest_report()
     vulnerabilities = parse_vulnerabilities(report_path)
 
     if not vulnerabilities:
         print("[*] No vulnerabilities found in report.")
         sys.exit(0)
 
-    print(f"[*] Found {len(vulnerabilities)} vulnerabilities to analyze")
-    analysis    = ask_mistral(vulnerabilities)
+    print(f"[*] Found {len(vulnerabilities)} vulnerabilities — analyzing top 3")
+    analysis = ask_mistral(vulnerabilities)
     save_html_report(vulnerabilities, analysis)
     print("\n[+] ✅ AI analysis complete!")
